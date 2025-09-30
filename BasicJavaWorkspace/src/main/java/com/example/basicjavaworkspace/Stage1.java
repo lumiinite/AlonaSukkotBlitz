@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package com.example.basicjavaworkspace;
 import java.util.Scanner;
 public class Stage1 {
     static Scanner sc = new Scanner(System.in);
