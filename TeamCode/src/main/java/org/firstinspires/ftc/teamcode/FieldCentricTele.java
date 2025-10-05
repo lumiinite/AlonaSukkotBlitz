@@ -64,7 +64,7 @@ public class FieldCentricTele extends LinearOpMode {
             backRight.setPower(brPower);
 
             telemetry.addData("Speed mode:", spdMulti);
-            telemetry.update();
+
 
         }
 
