@@ -13,7 +13,8 @@ public class FieldCentricTele extends LinearOpMode {
     private DcMotor frontLeft, frontRight, backLeft, backRight;
     private final double SLOW_MODE = 0.3;
     private final double FAST_MODE = 1;
-    private double spdMulti = FAST_MODE;
+    private double modeCheck=1; // can prob not init but its better to start automatically in fast
+
     private BNO055IMU imu;
 
     public void initMotors(){
@@ -29,7 +30,7 @@ public class FieldCentricTele extends LinearOpMode {
     public void initIMU(){
         imu = hardwareMap.get(BNO055IMU.class, "imu");
         BNO055IMU.Parameters parameter = new BNO055IMU.Parameters();
-        parameter.angleUnit = BNO055IMU.AngleUnit.DEGREES; //unsure about these 2 lines
+        parameter.angleUnit = BNO055IMU.AngleUnit.DEGREES;
         imu.initialize(parameter);
     }
 
@@ -40,30 +41,47 @@ public class FieldCentricTele extends LinearOpMode {
         waitForStart();
         while(opModeIsActive()){
             if(gamepad1.aWasPressed()){
-                //--
+                if (modeCheck == 1.0) {
+                    modeCheck = 0.5;
+                } else {
+                    modeCheck = 1.0;
+                }
             }
 
-            double spdy = -gamepad1.left_stick_y;
-            double spdx = gamepad1.left_stick_x * 1.1;
-            double rotate = gamepad1.right_stick_x;
+            double spdy = -gamepad1.left_stick_y * modeCheck;
+            double spdx = gamepad1.left_stick_x  * modeCheck;
+            double rotate = gamepad1.right_stick_x * modeCheck;
+
             Orientation angles = imu.getAngularOrientation();
             double heading = angles.firstAngle;
 
-            double turnX = spdx * Math.cos(-heading) - spdy * Math.sin(-heading);
-            double turnY = spdx * Math.sin(-heading) + spdy * Math.cos(-heading);
 
-            double mathdenom = Math.max(Math.abs(spdy) + Math.abs(spdx) + Math.abs(rotate), 1);
-            double flPower = (spdy + spdx + rotate) / mathdenom * spdMulti;
-            double blPower = (spdy - spdx + rotate) / mathdenom * spdMulti;
-            double frPower = (spdy - spdx - rotate) / mathdenom * spdMulti;
-            double brPower = (spdy + spdx - rotate) / mathdenom * spdMulti;
+            double cosAngle = Math.toRadians(Math.cos(heading)); //better like this to show telemetry in degrees(?)
+            double sinAngle = Math.toRadians(Math.sin(heading));
+
+
+            double fX = spdx * cosAngle - spdy * sinAngle;
+            double fY = spdx * sinAngle + spdy * cosAngle;
+
+
+            double mathdenom = Math.max(Math.abs(fY) + Math.abs(fX) + Math.abs(rotate), 1);
+            double flPower = (fY + fX + rotate)/mathdenom;
+            double blPower = (fY - fX + rotate)/mathdenom;
+            double frPower = (fY - fX - rotate)/mathdenom;
+            double brPower = (fY + fX  - rotate)/mathdenom;
 
             frontLeft.setPower(flPower);
             backLeft.setPower(blPower);
             frontRight.setPower(frPower);
             backRight.setPower(brPower);
 
-            telemetry.addData("Speed mode:", spdMulti);
+            telemetry.addData("heading:", heading);
+            if(modeCheck == 1.0){  //just for convenience to see actual mode
+                telemetry.addData("mode: fast mode", modeCheck );
+            }
+            else{
+                telemetry.addData("mode: slow mode", modeCheck);
+            }
             telemetry.update();
 
 
